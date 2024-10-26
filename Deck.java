@@ -23,11 +23,12 @@ public class Deck {
      */
     public Deck() {
         deck = new ArrayList<Card>();
-
-        for (int rank = 2; rank <= ACE; rank++) {
-            for (int suit = HEARTS; suit <= CLUBS; suit++) {
-                Card card = new Card(rank, suit);
-                deck.add(card);
+        for (int i = 0; i < 6; i++) {
+            for (int rank = 2; rank <= ACE; rank++) {
+                for (int suit = HEARTS; suit <= CLUBS; suit++) {
+                    Card card = new Card(rank, suit);
+                    deck.add(card);
+                }
             }
         }
     }
@@ -67,7 +68,7 @@ public class Deck {
      */
     public void shuffle() {
         for (int i = 0; i < deck.size(); i++) {
-            int randomIndex = Randomizer.nextInt(52);
+            int randomIndex = Randomizer.nextInt(312);
             Card x = deck.get(i);
             Card y = deck.get(randomIndex);
 

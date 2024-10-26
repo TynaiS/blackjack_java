@@ -23,6 +23,10 @@ public class Hand {
         cards = new ArrayList<Card>();
     }
 
+    public void clearHand() {
+        cards = new ArrayList<Card>();
+    }
+
     /**
      * This adds a card to our hand.
      * 
@@ -112,6 +116,7 @@ public class Hand {
      * Return a String representation of the hand, including showing
      * the value.
      */
+    @Override
     public String toString() {
         String result = "";
 

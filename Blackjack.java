@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 /**
@@ -25,6 +27,8 @@ public class Blackjack {
 
     // The starting bankroll for the player.
     private static final int STARTING_BANKROLL = 100;
+    private static int numOfPlayers;
+    private static ArrayList<Player> players = new ArrayList<Player>();;
     private Scanner scanner = new Scanner(System.in);
 
     /**
@@ -33,15 +37,16 @@ public class Blackjack {
      * @return A lowercase string of "hit" or "stand"
      *         to indicate the player's move.
      */
-    private String getPlayerMove() {
+    private String getPlayerMove(String playerName) {
         while (true) {
-            System.out.print("Enter move (hit/stand): ");
+            System.out.print(playerName + ", enter your move (hit/stand): ");
             String move = scanner.nextLine().toLowerCase();
 
             if (move.equals("hit") || move.equals("stand")) {
                 return move;
+            } else {
+                System.out.println("Please try again.");
             }
-            System.out.println("Please try again.");
         }
     }
 
@@ -89,27 +94,31 @@ public class Blackjack {
      * 
      * Return whether or not the player busted.
      */
-    private boolean playerTurn(Hand player, Deck deck) {
-        while (true) {
-            String move = getPlayerMove();
+    private boolean playerTurn(Player player, Deck deck) {
 
+        boolean wantsToHit = true;
+        boolean result = false;
+
+        while (wantsToHit) {
+            String move = getPlayerMove(player.getName());
             if (move.equals("hit")) {
                 Card c = deck.deal();
                 System.out.println("Your card was: " + c);
                 player.addCard(c);
-                System.out.println("Player's hand");
+                System.out.println(player.getName() + "'s hand");
                 System.out.println(player);
 
                 if (player.busted()) {
-                    return true;
+                    result = true;
+                    wantsToHit = false;
                 }
-            } else {
-                // If we didn't hit, the player chose to
-                // stand, which means the turn is over.
-                return false;
+            } else if (move.equals("stand")) {
+                wantsToHit = false;
             }
-
         }
+
+        return result;
+
     }
 
     /**
@@ -152,22 +161,36 @@ public class Blackjack {
      * Find the winner between the player hand and dealer
      * hand. Return how much was won or lost.
      */
-    private double findWinner(Hand dealer, Hand player, int bet) {
-        if (playerWins(player, dealer)) {
-            System.out.println("Player wins!");
+    private void findWinner(Hand dealer) {
+        for (Player player : players) {
+            double bankrollChange = 0;
 
-            if (player.hasBlackjack()) {
-                return 1.5 * bet;
+            if (playerWins(player, dealer)) {
+                System.out.println(player.getName() + " wins!");
+
+                if (player.hasBlackjack()) {
+                    bankrollChange = 1.5 * player.getBet();
+                } else {
+                    bankrollChange = player.getBet();
+                }
+
+                System.out.println(player.getName() + "'s bankroll: " + (player.getBankroll() + bankrollChange));
+                System.out.println();
+            } else if (push(player, dealer)) {
+                System.out.println(player.getName() + ", you push");
+                System.out.println(player.getName() + "'s bankroll: " + (player.getBankroll() + bankrollChange));
+                System.out.println();
+            } else {
+                System.out.println("Dealer wins you, " + player.getName());
+                bankrollChange = -player.getBet();
+                System.out.println(player.getName() + "'s bankroll: " + (player.getBankroll() + bankrollChange));
+                System.out.println();
             }
 
-            return bet;
-        } else if (push(player, dealer)) {
-            System.out.println("You push");
-            return 0;
-        } else {
-            System.out.println("Dealer wins");
-            return -bet;
+            player.setBankroll(player.getBankroll() + bankrollChange);
+            player.clearHand();
         }
+
     }
 
     /**
@@ -182,46 +205,54 @@ public class Blackjack {
      * @param bankroll
      * @return The new bankroll for the player.
      */
-    private double playRound(double bankroll) {
-        System.out.print("What is your bet? ");
-        int bet = scanner.nextInt();
-        scanner.nextLine();
+    private void playRound() {
+        for (Player player : players) {
+            System.out.print(player.getName() + ", what is your bet? ");
+            player.setBet(scanner.nextInt());
+            scanner.nextLine();
+        }
 
         Deck deck = new Deck();
         deck.shuffle();
 
-        Hand player = new Hand();
         Hand dealer = new Hand();
 
-        player.addCard(deck.deal());
-        dealer.addCard(deck.deal());
-        player.addCard(deck.deal());
-        dealer.addCard(deck.deal());
+        // --- Dealing cards to all players and the dealer ---
 
-        System.out.println("Player's Hand");
-        System.out.println(player);
+        for (int i = 0; i < 2; i++) {
+            for (Player player : players) {
+                player.addCard(deck.deal());
+            }
 
-        System.out.println("Dealer's hand");
-        // System.out.println(dealer);
-        dealer.printDealerHand();
+            dealer.addCard(deck.deal());
+        }
 
-        boolean playerBusted = playerTurn(player, deck);
+        // -------------------------------------------------
 
-        if (playerBusted) {
-            System.out.println("You busted :(");
+        for (Player player : players) {
+            System.out.println();
+            System.out.println(player.getName() + "'s hand");
+            System.out.println(player);
+
+            System.out.println("Dealer's hand");
+            dealer.printDealerHand();
+
+            if (player.hasBlackjack()) {
+                System.out.println(player.getName() + " wins!");
+            } else {
+                boolean playerBusted = playerTurn(player, deck);
+                if (playerBusted) {
+                    System.out.println("You busted :(");
+                }
+            }
+
         }
 
         System.out.println("Enter for dealer turn...");
         scanner.nextLine();
         dealerTurn(dealer, deck);
 
-        double bankrollChange = findWinner(dealer, player, bet);
-
-        bankroll += bankrollChange;
-
-        System.out.println("New bankroll: " + bankroll);
-
-        return bankroll;
+        findWinner(dealer);
     }
 
     /**
@@ -229,17 +260,30 @@ public class Blackjack {
      * playing roudns as long as the user wants to.
      */
     public void run() {
-        double bankroll = STARTING_BANKROLL;
-        System.out.println("Starting bankroll: " + bankroll);
+        System.out.print("How many players will there be? (1-6) ");
+        numOfPlayers = scanner.nextInt();
+        scanner.nextLine();
 
-        while (true) {
-            bankroll = playRound(bankroll);
+        for (int i = 1; i <= numOfPlayers; i++) {
+            Player newPlayer = new Player("player" + i, STARTING_BANKROLL);
+            players.add(newPlayer);
+        }
+        System.out.println("Starting bankroll for all players: " + STARTING_BANKROLL);
 
-            System.out.print("Would you like to play again? (Y/N) ");
-            String playAgain = scanner.nextLine();
-            if (playAgain.equalsIgnoreCase("N")) {
-                break;
+        while (players.size() > 0) {
+            playRound();
+
+            List<Player> playersToRemove = new ArrayList<>();
+            for (Player player : players) {
+                System.out.print(player.getName() + ", would you like to play again? (Y/N) ");
+                String playAgain = scanner.nextLine();
+                if (playAgain.equalsIgnoreCase("N")) {
+                    playersToRemove.add(player);
+                }
             }
+
+            players.removeAll(playersToRemove);
+
         }
 
         System.out.println("Thanks for playing!");
