@@ -23,10 +23,6 @@ public class Hand {
         cards = new ArrayList<Card>();
     }
 
-    public void clearHand() {
-        cards = new ArrayList<Card>();
-    }
-
     /**
      * This adds a card to our hand.
      * 
@@ -85,13 +81,7 @@ public class Hand {
         return getValue() > 21;
     }
 
-    /**
-     * Return if the hand is a five-card-charlie, which means
-     * contained five cards.
-     * 
-     * @return If the hand was a five-card charlie.
-     */
-    public boolean fiveCardCharlie() {
+    public boolean fiveCardWin() {
         return cards.size() == 5;
     }
 
@@ -116,7 +106,6 @@ public class Hand {
      * Return a String representation of the hand, including showing
      * the value.
      */
-    @Override
     public String toString() {
         String result = "";
 
